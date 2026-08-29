@@ -22,6 +22,24 @@ const (
 
 var VersionString = "unset"
 
+func init() {
+	cli.VersionPrinter = printVersion
+}
+
+func printVersion(cmd *cli.Command) {
+	cli.DefaultPrintVersion(cmd)
+
+	version := cmd.Version
+	if strings.Contains(version, "nightly") {
+		version = "nightly"
+	}
+
+	pterm.Fprint(
+		cmd.Root().Writer,
+		"https://github.com/ayoisaiah/f2/releases/"+version,
+	)
+}
+
 // isInputFromPipe detects if input is being piped to F2.
 func isInputFromPipe() bool {
 	fileInfo, _ := os.Stdin.Stat()
@@ -91,22 +109,6 @@ func Get(reader io.Reader, writer io.Writer) (*cli.Command, error) {
 }
 
 func CreateCLIApp(r io.Reader, w io.Writer) *cli.Command {
-	// Override the default version printer
-	oldVersionPrinter := cli.VersionPrinter
-	cli.VersionPrinter = func(cmd *cli.Command) {
-		oldVersionPrinter(cmd)
-		v := cmd.Version
-
-		if strings.Contains(v, "nightly") {
-			v = "nightly"
-		}
-
-		pterm.Fprint(
-			w,
-			"https://github.com/ayoisaiah/f2/releases/"+v,
-		)
-	}
-
 	app := &cli.Command{
 		Name: "f2",
 		Authors: []any{

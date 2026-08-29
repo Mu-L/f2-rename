@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -158,27 +159,29 @@ func TestShortHelp(t *testing.T) {
 }
 
 func TestVersion(t *testing.T) {
-	t.Skip("versioning is no longer hard coded")
+	originalVersion := app.VersionString
+	app.VersionString = "v2.1.0"
 
-	tc := &testutil.TestCase{
-		Name: "version",
-		Args: []string{"f2_test", "--version"},
+	t.Cleanup(func() { app.VersionString = originalVersion })
+
+	outputs := make([]bytes.Buffer, 2)
+	for i := range outputs {
+		renamer, err := app.Get(strings.NewReader(""), &outputs[i])
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if err := renamer.Run(t.Context(), []string{"f2_test", "--version"}); err != nil {
+			t.Fatal(err)
+		}
 	}
 
-	var stdout bytes.Buffer
-
-	renamer, err := app.Get(os.Stdin, &stdout)
-	if err != nil {
-		t.Fatal(err)
+	want := "f2 version v2.1.0\nhttps://github.com/ayoisaiah/f2/releases/v2.1.0"
+	for i := range outputs {
+		if got := outputs[i].String(); got != want {
+			t.Errorf("output %d = %q, want %q", i, got, want)
+		}
 	}
-
-	err = renamer.Run(t.Context(), tc.Args)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	tc.SnapShot.Stdout = stdout.Bytes()
-	testutil.CompareGoldenFile(t, tc)
 }
 
 func TestDefaultEnv(t *testing.T) {
