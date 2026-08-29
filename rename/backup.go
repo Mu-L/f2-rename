@@ -1,7 +1,7 @@
 package rename
 
 import (
-	"bufio"
+	"errors"
 	"io"
 	"log/slog"
 	"os"
@@ -11,7 +11,7 @@ import (
 	"github.com/ayoisaiah/f2/v2/internal/osutil"
 )
 
-func createBackupFile(fileName string) (io.Writer, error) {
+func createBackupFile(fileName string) (*os.File, error) {
 	backupFilePath := filepath.Join(
 		os.TempDir(),
 		"f2",
@@ -30,12 +30,7 @@ func createBackupFile(fileName string) (io.Writer, error) {
 	}
 
 	// Create or truncate backupFile
-	backupFile, err := os.Create(backupFilePath)
-	if err != nil {
-		return nil, err
-	}
-
-	return bufio.NewWriter(backupFile), nil
+	return os.Create(backupFilePath)
 }
 
 // backupChanges records the details of a renaming operation to the specified
@@ -46,14 +41,18 @@ func backupChanges(
 	cleanedDirs []string,
 	fileName string,
 	w io.Writer,
-) error {
-	var err error
-
+) (err error) {
 	if w == nil {
-		w, err = createBackupFile(fileName)
+		backupFile, err := createBackupFile(fileName)
 		if err != nil {
 			return err
 		}
+
+		w = backupFile
+
+		defer func() {
+			err = errors.Join(err, backupFile.Close())
+		}()
 	}
 
 	b := file.Backup{
@@ -63,14 +62,5 @@ func backupChanges(
 
 	slog.Debug("backing up changed", slog.Any("backup", b))
 
-	err = b.RenderJSON(w)
-	if err != nil {
-		return err
-	}
-
-	if f, ok := w.(*bufio.Writer); ok {
-		return f.Flush()
-	}
-
-	return nil
+	return b.RenderJSON(w)
 }
