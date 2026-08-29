@@ -118,7 +118,6 @@ func handleCSV(conf *config.Config) (file.Changes, error) {
 
 			if filepath.IsAbs(match.Target) {
 				match.TargetDir = ""
-				continue
 			}
 		}
 

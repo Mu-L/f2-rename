@@ -1,9 +1,36 @@
 package find
 
 import (
+	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/ayoisaiah/f2/v2/internal/config"
 )
+
+func TestHandleCSVAbsoluteTarget(t *testing.T) {
+	dir := t.TempDir()
+	source := filepath.Join(dir, "source.txt")
+	target := filepath.Join(dir, "target.txt")
+	csvPath := filepath.Join(dir, "rename.csv")
+
+	if err := os.WriteFile(source, nil, 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := os.WriteFile(csvPath, []byte(source+","+target+"\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	changes, err := handleCSV(&config.Config{CSVFilename: csvPath, WorkingDir: dir})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(changes) != 1 {
+		t.Fatalf("expected absolute target to produce one change, got %d", len(changes))
+	}
+}
 
 func TestIsMaxDepth(t *testing.T) {
 	cases := []struct {
