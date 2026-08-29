@@ -22,10 +22,9 @@ func ExitWithErr(w io.Writer, err error) {
 	errPrefix := localize.T("report.error")
 	errMessage := err.Error()
 
-	s := strings.Split(errMessage, ":")
-	if len(s) > 1 {
-		errPrefix = strings.TrimSpace(s[0])
-		errMessage = strings.TrimSpace(s[1])
+	if prefix, message, found := strings.Cut(errMessage, ":"); found {
+		errPrefix = strings.TrimSpace(prefix)
+		errMessage = strings.TrimSpace(message)
 	}
 
 	pterm.Fprintln(

@@ -256,7 +256,7 @@ func TestNoMatches(t *testing.T) {
 
 func TestExitWithErr(t *testing.T) {
 	if os.Getenv("BE_CRASHER") == "1" {
-		report.ExitWithErr(t.Output(), errors.New("something went wrong"))
+		report.ExitWithErr(os.Stderr, errors.New(`rename failed: open C:\tmp\file: access denied`))
 		return
 	}
 
@@ -264,13 +264,15 @@ func TestExitWithErr(t *testing.T) {
 
 	cmd.Env = append(os.Environ(), "BE_CRASHER=1")
 
-	err := cmd.Run()
+	output, err := cmd.CombinedOutput()
 	//nolint:errorlint // checking if err matches exit error
-	if e, ok := err.(*exec.ExitError); ok && !e.Success() {
-		return
+	if e, ok := err.(*exec.ExitError); !ok || e.Success() {
+		t.Fatalf("process ran with err %v, want exit status 1", err)
 	}
 
-	t.Fatalf("process ran with err %v, want exit status 1", err)
+	if !strings.Contains(string(output), `C:\tmp\file: access denied`) {
+		t.Fatalf("expected complete nested error, got %q", output)
+	}
 }
 
 func TestBackupFailed(t *testing.T) {
