@@ -237,7 +237,7 @@ func Natural(changes file.Changes, reverseSort bool) {
 		}
 
 		if reverseSort {
-			return !natural.Less(sourcePathA, sourcePathB)
+			return natural.Less(sourcePathB, sourcePathA)
 		}
 
 		return natural.Less(sourcePathA, sourcePathB)

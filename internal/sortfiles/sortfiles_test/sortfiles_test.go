@@ -430,6 +430,19 @@ func TestSortFiles_Natural(t *testing.T) {
 	}
 }
 
+func TestSortFiles_NaturalReversePreservesEqualItems(t *testing.T) {
+	changes := file.Changes{
+		{SourcePath: "file1.txt", Target: "first"},
+		{SourcePath: "file1.txt", Target: "second"},
+	}
+
+	sortfiles.Natural(changes, true)
+
+	if changes[0].Target != "first" {
+		t.Fatalf("expected equal items to retain their order, got %q first", changes[0].Target)
+	}
+}
+
 func TestSortFiles_ByTime(t *testing.T) {
 	testCases := []sortTestCase{
 		{
