@@ -1,7 +1,6 @@
 package find
 
 import (
-	"bufio"
 	"encoding/csv"
 	"errors"
 	"os"
@@ -23,8 +22,7 @@ func readCSVFile(pathToCSV string) ([][]string, error) {
 
 	defer f.Close()
 
-	// Use bufio for potential performance gains with large CSV files
-	csvReader := csv.NewReader(bufio.NewReader(f))
+	csvReader := csv.NewReader(f)
 
 	records, err := csvReader.ReadAll()
 	if err != nil {
@@ -37,7 +35,7 @@ func readCSVFile(pathToCSV string) ([][]string, error) {
 // handleCSV reads the provided CSV file, and finds all the valid candidates
 // for renaming.
 func handleCSV(conf *config.Config) (file.Changes, error) {
-	processed := make(map[string]bool)
+	processed := make(map[string]struct{})
 
 	var changes file.Changes
 
@@ -88,11 +86,11 @@ func handleCSV(conf *config.Config) (file.Changes, error) {
 
 		// Ensure that the file is not already processed in the case of
 		// duplicate rows
-		if processed[source] {
+		if _, ok := processed[source]; ok {
 			continue
 		}
 
-		processed[source] = true
+		processed[source] = struct{}{}
 
 		sourcePath := filepath.Join(sourceDir, fileName)
 

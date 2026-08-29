@@ -261,7 +261,7 @@ func walkDirectory(
 	ctx context.Context,
 	conf *config.Config,
 	rootPath string,
-	processedPaths map[string]bool,
+	processedPaths map[string]struct{},
 	filters Filters,
 	sortVars *variables.Variables,
 ) (file.Changes, error) {
@@ -279,7 +279,8 @@ func walkDirectory(
 				return err
 			}
 
-			if rootPath == currentPath || processedPaths[currentPath] {
+			_, processed := processedPaths[currentPath]
+			if rootPath == currentPath || processed {
 				return nil
 			}
 
@@ -338,7 +339,7 @@ func walkDirectory(
 				matches = append(matches, match)
 			}
 
-			processedPaths[currentPath] = true
+			processedPaths[currentPath] = struct{}{}
 
 			return nil
 		},
@@ -361,7 +362,7 @@ func searchPaths(
 	filters Filters,
 	sortVars, searchVars *variables.Variables,
 ) (file.Changes, error) {
-	processedPaths := make(map[string]bool)
+	processedPaths := make(map[string]struct{})
 
 	var matches file.Changes
 
@@ -374,7 +375,7 @@ func searchPaths(
 		}
 
 		if !rootPathInfo.IsDir() {
-			if processedPaths[rootPath] {
+			if _, ok := processedPaths[rootPath]; ok {
 				continue
 			}
 
@@ -394,7 +395,7 @@ func searchPaths(
 				matches = append(matches, match)
 			}
 
-			processedPaths[rootPath] = true
+			processedPaths[rootPath] = struct{}{}
 
 			continue
 		}

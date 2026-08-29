@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/mail"
 	"os"
+	"slices"
 	"strings"
 
 	"github.com/pterm/pterm"
@@ -74,16 +75,14 @@ func Get(reader io.Reader, writer io.Writer) (*cli.Command, error) {
 
 	app := CreateCLIApp(reader, writer)
 
-	origArgs := make([]string, len(os.Args))
-
-	copy(origArgs, os.Args)
+	origArgs := slices.Clone(os.Args)
 
 	if optsEnv, exists := os.LookupEnv(EnvDefaultOpts); exists {
 		args := strings.Fields(optsEnv)
 
 		for _, token := range args {
 			if strings.HasPrefix(token, "-") {
-				if !supportedDefaultOpts[token] {
+				if _, ok := supportedDefaultOpts[token]; !ok {
 					return nil, errDefaultOptsParsing.Fmt(token)
 				}
 			}

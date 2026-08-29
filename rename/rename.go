@@ -27,14 +27,14 @@ var errRenameFailed = &apperr.Error{
 // Renamer handles the state and logic for a renaming operation.
 type Renamer struct {
 	conf          *config.Config
-	traversedDirs map[string]string
+	traversedDirs map[string]struct{}
 }
 
 // NewRenamer creates a new Renamer instance.
 func NewRenamer(conf *config.Config) *Renamer {
 	return &Renamer{
 		conf:          conf,
-		traversedDirs: make(map[string]string),
+		traversedDirs: make(map[string]struct{}),
 	}
 }
 
@@ -119,7 +119,7 @@ func (r *Renamer) commit(fileChanges file.Changes) []int {
 			}
 		}
 
-		r.traversedDirs[ch.BaseDir] = ch.BaseDir
+		r.traversedDirs[ch.BaseDir] = struct{}{}
 
 		slog.Debug(
 			"renaming source to target",
@@ -193,7 +193,7 @@ func (r *Renamer) PostRename(
 	var cleanedDirs []string
 
 	if r.conf.Clean && !r.conf.Revert {
-		for _, dir := range r.traversedDirs {
+		for dir := range r.traversedDirs {
 			if dir == "." { // don't try to clean the working directory
 				continue
 			}
