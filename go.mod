@@ -1,6 +1,6 @@
 module github.com/ayoisaiah/f2/v2
 
-go 1.26.2
+go 1.26.6
 
 require (
 	github.com/barasher/go-exiftool v1.10.0
@@ -9,7 +9,7 @@ require (
 	github.com/pterm/pterm v0.12.80
 	github.com/rwcarlsen/goexif v0.0.0-20190401172101-9e8deecbddbd
 	golang.org/x/sys v0.33.0 // indirect
-	golang.org/x/text v0.25.0
+	golang.org/x/text v0.39.0
 	gopkg.in/djherbis/times.v1 v1.3.0
 )
 
@@ -30,7 +30,7 @@ require (
 	github.com/stretchr/testify v1.10.0
 	github.com/urfave/cli/v3 v3.4.1
 	go.withmatt.com/size v0.0.0-20250220224316-11aee5773e67
-	golang.org/x/sync v0.20.0
+	golang.org/x/sync v0.21.0
 )
 
 require (
