@@ -4,7 +4,6 @@ package sortfiles
 
 import (
 	"cmp"
-	"io/fs"
 	"os"
 	"path/filepath"
 	"slices"
@@ -113,57 +112,41 @@ func ByTime(
 	changes file.Changes,
 	conf *config.Config,
 ) {
-	slices.SortStableFunc(changes, func(a, b *file.Change) int {
-		sourcePathA, sourcePathB := a.SourcePath, b.SourcePath
-
-		if a.PrimaryPair != nil {
-			sourcePathA = a.PrimaryPair.SourcePath
+	for _, change := range changes {
+		sourcePath := change.SourcePath
+		if change.PrimaryPair != nil {
+			sourcePath = change.PrimaryPair.SourcePath
 		}
 
-		if b.PrimaryPair != nil {
-			sourcePathB = b.PrimaryPair.SourcePath
-		}
-
-		sourceA, errA := times.Stat(sourcePathA)
-		sourceB, errB := times.Stat(sourcePathB)
-
-		if errA != nil || errB != nil {
-			pterm.Error.Printfln(
-				"error getting file times info: %v, %v",
-				errA,
-				errB,
-			)
+		source, err := times.Stat(sourcePath)
+		if err != nil {
+			pterm.Error.Printfln("error getting file times info: %v", err)
 			os.Exit(1)
 		}
 
-		aTime, bTime := sourceA.ModTime(), sourceB.ModTime()
+		fileTime := source.ModTime()
 
 		//nolint:exhaustive // considering time sorts alone
 		switch conf.Sort {
 		case config.SortMtime:
 		case config.SortBtime:
-			if sourceA.HasBirthTime() {
-				aTime = sourceA.BirthTime()
-			}
-
-			if sourceB.HasBirthTime() {
-				bTime = sourceB.BirthTime()
+			if source.HasBirthTime() {
+				fileTime = source.BirthTime()
 			}
 		case config.SortAtime:
-			aTime = sourceA.AccessTime()
-			bTime = sourceB.AccessTime()
+			fileTime = source.AccessTime()
 		case config.SortCtime:
-			if sourceA.HasChangeTime() {
-				aTime = sourceA.ChangeTime()
-			}
-
-			if sourceB.HasChangeTime() {
-				bTime = sourceB.ChangeTime()
+			if source.HasChangeTime() {
+				fileTime = source.ChangeTime()
 			}
 		}
 
-		a.SortCriterion.Time = aTime
-		b.SortCriterion.Time = bTime
+		change.SortCriterion.Time = fileTime
+	}
+
+	slices.SortStableFunc(changes, func(a, b *file.Change) int {
+		aTime := a.SortCriterion.Time
+		bTime := b.SortCriterion.Time
 
 		if conf.SortPerDir && a.BaseDir != b.BaseDir {
 			return 0
@@ -180,43 +163,32 @@ func ByTime(
 // BySize sorts the file changes in place based on their file size, either in
 // ascending or descending order depending on the `reverseSort` flag.
 func BySize(changes file.Changes, conf *config.Config) {
-	slices.SortStableFunc(changes, func(a, b *file.Change) int {
-		sourcePathA, sourcePathB := a.SourcePath, b.SourcePath
-
-		if a.PrimaryPair != nil {
-			sourcePathA = a.PrimaryPair.SourcePath
+	for _, change := range changes {
+		sourcePath := change.SourcePath
+		if change.PrimaryPair != nil {
+			sourcePath = change.PrimaryPair.SourcePath
 		}
 
-		if b.PrimaryPair != nil {
-			sourcePathB = b.PrimaryPair.SourcePath
-		}
-
-		var fileInfoA, fileInfoB fs.FileInfo
-
-		fileInfoA, errA := os.Stat(sourcePathA)
-		fileInfoB, errB := os.Stat(sourcePathB)
-
-		if errA != nil || errB != nil {
-			pterm.Error.Printfln("error getting file info: %v, %v", errA, errB)
+		fileInfo, err := os.Stat(sourcePath)
+		if err != nil {
+			pterm.Error.Printfln("error getting file info: %v", err)
 			os.Exit(1)
 		}
 
-		fileASize := fileInfoA.Size()
-		fileBSize := fileInfoB.Size()
+		change.SortCriterion.Size = fileInfo.Size()
+	}
 
-		a.SortCriterion.Size = fileASize
-		b.SortCriterion.Size = fileBSize
-
+	slices.SortStableFunc(changes, func(a, b *file.Change) int {
 		// Don't sort files in different directories relative to each other
 		if conf.SortPerDir && a.BaseDir != b.BaseDir {
 			return 0
 		}
 
 		if conf.ReverseSort {
-			return int(fileBSize - fileASize)
+			return cmp.Compare(b.SortCriterion.Size, a.SortCriterion.Size)
 		}
 
-		return int(fileASize - fileBSize)
+		return cmp.Compare(a.SortCriterion.Size, b.SortCriterion.Size)
 	})
 }
 
