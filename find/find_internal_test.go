@@ -30,6 +30,19 @@ func TestHandleCSVAbsoluteTarget(t *testing.T) {
 	if len(changes) != 1 {
 		t.Fatalf("expected absolute target to produce one change, got %d", len(changes))
 	}
+
+	change := changes[0]
+	if change.TargetDir != "" {
+		t.Errorf("expected empty target directory, got %q", change.TargetDir)
+	}
+
+	if change.Target != target {
+		t.Errorf("expected target %q, got %q", target, change.Target)
+	}
+
+	if change.Source != "source.txt" {
+		t.Errorf("expected source %q, got %q", "source.txt", change.Source)
+	}
 }
 
 func TestIsMaxDepth(t *testing.T) {
