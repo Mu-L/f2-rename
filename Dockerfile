@@ -1,5 +1,5 @@
 # Build stage
-ARG GO_VERSION=1.26.6
+ARG GO_VERSION=1.27.1
 FROM golang:${GO_VERSION}-alpine AS builder
 
 # Set the working directory

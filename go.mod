@@ -1,6 +1,6 @@
 module github.com/ayoisaiah/f2/v2
 
-go 1.26.6
+go 1.27.1
 
 require (
 	github.com/barasher/go-exiftool v1.10.0
